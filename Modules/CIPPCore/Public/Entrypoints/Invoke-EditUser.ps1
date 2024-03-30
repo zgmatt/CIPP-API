@@ -42,7 +42,6 @@ Function Invoke-EditUser {
             'displayName'       = $UserObj.Displayname
             'postalCode'        = $userobj.postalCode
             'companyName'       = $userobj.companyName
-            'mailNickname'      = $UserObj.username
             'jobTitle'          = $UserObj.JobTitle
             'userPrincipalName' = $Email
             'usageLocation'     = $UserObj.usageLocation
@@ -161,7 +160,14 @@ Function Invoke-EditUser {
 
         }         
     }
-
+    if ($Request.body.setManager) {
+        $ManagerBody = [PSCustomObject]@{'@odata.id' = "https://graph.microsoft.com/beta/users/$($Request.body.setManager.value)" }
+        $ManagerBodyJSON = ConvertTo-Json -Compress -Depth 10 -InputObject $ManagerBody
+        New-GraphPostRequest -uri "https://graph.microsoft.com/beta/users/$($userobj.Userid)/manager/`$ref" -tenantid $Userobj.tenantid -type PUT -body $ManagerBodyJSON -Verbose
+        Write-LogMessage -user $request.headers.'x-ms-client-principal' -API $APINAME -tenant $Userobj.tenantid -message "Set $($UserObj.DisplayName)'s manager to $($Request.body.setManager.label)" -Sev 'Info'
+        $results.add("Success. Set $($UserObj.DisplayName)'s manager to $($Request.body.setManager.label)")
+    }
+    
     if ($RemoveFromGroups) {
         $RemoveFromGroups | ForEach-Object { 
 
